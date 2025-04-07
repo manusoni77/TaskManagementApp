@@ -66,7 +66,7 @@ export class TasksService {
     if (updateTaskDto.description) task.description = updateTaskDto.description;
     if (updateTaskDto.status) task.status = updateTaskDto.status;
     if (updateTaskDto.priority) task.priority = updateTaskDto.priority;
-    if (updateTaskDto.dueDate) task.dueDate = updateTaskDto.dueDate;
+    if (updateTaskDto.dueDate) task.dueDate = new Date(updateTaskDto.dueDate);
 
     const updatedTask = await this.tasksRepository.save(task);
 

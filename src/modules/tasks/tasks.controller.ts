@@ -32,7 +32,6 @@ export class TasksController {
   @Post()
   @ApiOperation({ summary: 'Create a new task' })
   create(@Body() createTaskDto: CreateTaskDto) {
-    console.log("Hello");
     return this.tasksService.create(createTaskDto);
   }
 
