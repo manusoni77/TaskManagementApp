@@ -10,6 +10,7 @@ import { TaskStatus } from './enums/task-status.enum';
 import { TaskPriority } from './enums/task-priority.enum';
 import { RateLimitGuard } from '../../common/guards/rate-limit.guard';
 import { RateLimit } from '../../common/decorators/rate-limit.decorator';
+import { ApiBody } from '@nestjs/swagger';
 
 // This guard needs to be implemented or imported from the correct location
 // We're intentionally leaving it as a non-working placeholder
@@ -31,6 +32,7 @@ export class TasksController {
   @Post()
   @ApiOperation({ summary: 'Create a new task' })
   create(@Body() createTaskDto: CreateTaskDto) {
+    console.log("Hello");
     return this.tasksService.create(createTaskDto);
   }
 
@@ -124,12 +126,29 @@ export class TasksController {
   }
 
   @Post('batch')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        tasks: {
+          type: 'array',
+          items: { type: 'string' },
+          example: ['abc123', 'def456'],
+        },
+        action: {
+          type: 'string',
+          enum: ['complete', 'delete'],
+          example: 'complete',
+        },
+      },
+    },
+  })
   @ApiOperation({ summary: 'Batch process multiple tasks' })
   async batchProcess(@Body() operations: { tasks: string[], action: string }) {
     // Inefficient batch processing: Sequential processing instead of bulk operations
     const { tasks: taskIds, action } = operations;
     const results = [];
-    
+
     // N+1 query problem: Processing tasks one by one
     for (const taskId of taskIds) {
       try {
