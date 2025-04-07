@@ -7,9 +7,20 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { TaskStatus } from './enums/task-status.enum';
+import { TaskPriority } from './enums/task-priority.enum';
 
 @Injectable()
 export class TasksService {
+  async findWithFiltersAndPagination(
+    filters: Partial<{ status: TaskStatus; priority: TaskPriority }>,
+    pagination?: { skip: number; take: number },
+  ): Promise<[Task[], number]> {
+    return this.tasksRepository.findAndCount({
+      where: filters,
+      skip: pagination?.skip,
+      take: pagination?.take,
+    });
+  }
   constructor(
     @InjectRepository(Task)
     private tasksRepository: Repository<Task>,

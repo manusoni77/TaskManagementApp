@@ -47,35 +47,36 @@ export class TasksController {
     @Query('page') page?: number,
     @Query('limit') limit?: number,
   ) {
-    // Inefficient approach: Inconsistent pagination handling
-    if (page && !limit) {
-      limit = 10; // Default limit
+    // Build filter object based on optional query parameters
+    const filters: any = {};
+    if (status) filters.status = status;
+    if (priority) filters.priority = priority;
+  
+    // If pagination parameters are provided, apply pagination
+    if (page && limit){
+      const [tasks, totalCount] = await this.tasksService.findWithFiltersAndPagination(
+        filters,
+        { skip: (page - 1) * limit, // Calculate offset
+          take: limit               // Number of items per page
+        },
+      );
+      return {
+        data: tasks,
+        count: tasks.length,
+        totalCount,
+        page,
+        limit,
+        totalPages: Math.ceil(totalCount / limit),
+      };
+    } else {
+      // If no pagination is specified, return all matching tasks
+      const [tasks, totalCount] = await this.tasksService.findWithFiltersAndPagination(filters);
+      return {
+        data: tasks,
+        count: tasks.length,
+        totalCount,
+      };
     }
-    
-    // Inefficient processing: Manual filtering instead of using repository
-    let tasks = await this.tasksService.findAll();
-    
-    // Inefficient filtering: In-memory filtering instead of database filtering
-    if (status) {
-      tasks = tasks.filter(task => task.status === status as TaskStatus);
-    }
-    
-    if (priority) {
-      tasks = tasks.filter(task => task.priority === priority as TaskPriority);
-    }
-    
-    // Inefficient pagination: In-memory pagination
-    if (page && limit) {
-      const startIndex = (page - 1) * limit;
-      const endIndex = page * limit;
-      tasks = tasks.slice(startIndex, endIndex);
-    }
-    
-    return {
-      data: tasks,
-      count: tasks.length,
-      // Missing metadata for proper pagination
-    };
   }
 
   @Get('stats')
