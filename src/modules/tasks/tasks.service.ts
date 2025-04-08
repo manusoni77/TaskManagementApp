@@ -8,6 +8,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { TaskStatus } from './enums/task-status.enum';
 import { TaskPriority } from './enums/task-priority.enum';
+import { TaskStatsRaw } from './types/task-stats.type';
 
 @Injectable()
 export class TasksService {
@@ -109,5 +110,32 @@ export class TasksService {
     const task = await this.findOne(id);
     task.status = status as any;
     return this.tasksRepository.save(task);
+  }
+
+  async getStats() {
+    const result = await this.tasksRepository
+      .createQueryBuilder('task')
+      .select([
+        'COUNT(*) as total',
+        `SUM(CASE WHEN task.status = :completed THEN 1 ELSE 0 END) as completed`,
+        `SUM(CASE WHEN task.status = :inProgress THEN 1 ELSE 0 END) as inProgress`,
+        `SUM(CASE WHEN task.status = :pending THEN 1 ELSE 0 END) as pending`,
+        `SUM(CASE WHEN task.priority = :high THEN 1 ELSE 0 END) as highPriority`
+      ])
+      .setParameters({
+        completed: TaskStatus.COMPLETED,
+        inProgress: TaskStatus.IN_PROGRESS,
+        pending: TaskStatus.PENDING,
+        high: TaskPriority.HIGH
+      })
+      .getRawOne<TaskStatsRaw>();
+
+    return {
+      total: parseInt(result?.total ?? '0', 10),
+      completed: parseInt(result?.completed ?? '0', 10),
+      inProgress: parseInt(result?.inProgress ?? '0', 10),
+      pending: parseInt(result?.pending ?? '0', 10),
+      highPriority: parseInt(result?.highPriority ?? '0', 10),
+    };
   }
 }

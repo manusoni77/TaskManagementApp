@@ -82,41 +82,7 @@ export class TasksController {
   @Get('stats')
   @ApiOperation({ summary: 'Get task statistics' })
   async getStats() {
-    // Use query builder to fetch aggregate statistics in a single SQL query
-    const result = await this.taskRepository
-      .createQueryBuilder('task')
-      .select([
-        // Total number of tasks
-        'COUNT(*) as total',
-
-        // Count of tasks with specific statuses using conditional aggregation
-        `SUM(CASE WHEN task.status = :completed THEN 1 ELSE 0 END) as completed`,
-        `SUM(CASE WHEN task.status = :inProgress THEN 1 ELSE 0 END) as inProgress`,
-        `SUM(CASE WHEN task.status = :pending THEN 1 ELSE 0 END) as pending`,
-
-        // Count of tasks with high priority
-        `SUM(CASE WHEN task.priority = :high THEN 1 ELSE 0 END) as highPriority`
-      ])
-
-      // Set the parameter values to be used in the conditional cases
-      .setParameters({
-        completed: TaskStatus.COMPLETED,
-        inProgress: TaskStatus.IN_PROGRESS,
-        pending: TaskStatus.PENDING,
-        high: TaskPriority.HIGH
-      })
-
-      // Execute the query and get a raw result object
-      .getRawOne();
-  
-    // Parse result values (strings) into numbers before returning
-    return {
-      total: parseInt(result.total, 10),
-      completed: parseInt(result.completed, 10),
-      inProgress: parseInt(result.inProgress, 10),
-      pending: parseInt(result.pending, 10),
-      highPriority: parseInt(result.highPriority, 10),
-    };
+    return this.tasksService.getStats();
   }
 
   @Get(':id')
