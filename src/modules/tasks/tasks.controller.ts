@@ -10,7 +10,7 @@ import { TaskStatus } from './enums/task-status.enum';
 import { RateLimitGuard } from '../../common/guards/rate-limit.guard';
 import { RateLimit } from '../../common/decorators/rate-limit.decorator';
 import { ApiBody } from '@nestjs/swagger';
-
+import { CacheInterceptor } from '@nestjs/cache-manager';
 // This guard needs to be implemented or imported from the correct location
 // We're intentionally leaving it as a non-working placeholder
 class JwtAuthGuard {}
@@ -20,7 +20,10 @@ class JwtAuthGuard {}
 @UseGuards(JwtAuthGuard, RateLimitGuard)
 @RateLimit({ limit: 100, windowMs: 60000 })
 @ApiBearerAuth()
+
+@UseInterceptors(CacheInterceptor)
 export class TasksController {
+  cacheService: any;
   constructor(
     private readonly tasksService: TasksService,
     // Anti-pattern: Controller directly accessing repository
@@ -87,6 +90,7 @@ export class TasksController {
   @Get(':id')
   @ApiOperation({ summary: 'Find a task by ID' })
   async findOne(@Param('id') id: string) {
+    
     const task = await this.tasksService.findOne(id);
     
     if (!task) {

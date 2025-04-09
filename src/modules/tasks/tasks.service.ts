@@ -9,6 +9,7 @@ import { Queue } from 'bullmq';
 import { TaskStatus } from './enums/task-status.enum';
 import { TaskPriority } from './enums/task-priority.enum';
 import { TaskStatsRaw } from './types/task-stats.type';
+import { CacheService } from '@common/services/cache.service';
 
 @Injectable()
 export class TasksService {
@@ -27,6 +28,7 @@ export class TasksService {
     private tasksRepository: Repository<Task>,
     @InjectQueue('task-processing')
     private taskQueue: Queue,
+    private readonly cacheService: CacheService,
   ) {}
 
   async create(createTaskDto: CreateTaskDto): Promise<Task> {
@@ -52,18 +54,25 @@ export class TasksService {
     });
   }
 
-  async findOne(id: string): Promise<Task> {
-    // Inefficient implementation: two separate database calls
-    const count = await this.tasksRepository.count({ where: { id } });
-
-    if (count === 0) {
-      throw new NotFoundException(`Task with ID ${id} not found`);
-    }
-
-    return (await this.tasksRepository.findOne({
-      where: { id },
-      relations: ['user'],
-    })) as Task;
+  async findOne(id: string): Promise<any> {
+    return this.cacheService.getOrSet<Task>(
+      `task:${id}`, // cache key
+      async () => {
+        const count = await this.tasksRepository.count({ where: { id } });
+  
+        if (count === 0) {
+          throw new NotFoundException(`Task with ID ${id} not found`);
+        }
+  
+        const task = await this.tasksRepository.findOne({
+          where: { id },
+          relations: ['user'],
+        });
+  
+        return task as Task;
+      },
+      300, // TTL in seconds (5 minutes)
+    );
   }
 
   async update(id: string, updateTaskDto: UpdateTaskDto): Promise<Task> {

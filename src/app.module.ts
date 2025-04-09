@@ -10,12 +10,22 @@ import { AuthModule } from './modules/auth/auth.module';
 import { TaskProcessorModule } from './queues/task-processor/task-processor.module';
 import { ScheduledTasksModule } from './queues/scheduled-tasks/scheduled-tasks.module';
 import { CacheService } from './common/services/cache.service';
-
+import { CacheModule } from '@nestjs/cache-manager';
+import * as redisStore from 'cache-manager-ioredis';
 @Module({
   imports: [
     // Configuration
     ConfigModule.forRoot({
       isGlobal: true,
+    }),
+    
+    CacheModule.register({
+      isGlobal: true,
+      store: redisStore as any,
+      host: process.env.REDIS_HOST || 'localhost',
+      port: Number(process.env.REDIS_PORT) || 6379,
+      password: process.env.REDIS_PASSWORD || undefined,
+      ttl: 300,
     }),
     
     // Database
@@ -79,7 +89,8 @@ import { CacheService } from './common/services/cache.service';
   exports: [
     // Exporting the cache service makes it available to other modules
     // but creates tight coupling
-    CacheService
+    CacheService,
+    CacheModule
   ]
 })
 export class AppModule {} 
