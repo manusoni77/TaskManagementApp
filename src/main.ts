@@ -19,7 +19,11 @@ async function bootstrap() {
   );
 
   // CORS
-  app.enableCors();
+  app.enableCors({
+    origin: ['http://localhost:3000', 'https://your-frontend.com'],
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true,
+  });
 
   // Swagger documentation
   const config = new DocumentBuilder()
